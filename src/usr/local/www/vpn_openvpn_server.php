@@ -458,18 +458,31 @@ if ($_POST['save']) {
 		$input_errors[] = gettext("The submitted IPv6 Tunnel Network is already in use.");
 	}
 
+	// Recuperar IPv4 Remote Networks
 	$remote_networks = [];
-    $counter = 0;
-    while (isset($pconfig['remote_network' . $counter])) {
-        if (!empty($pconfig['remote_network' . $counter])) {
-            $remote_networks[] = $pconfig['remote_network' . $counter];
-        }
-        $counter++;
-    }
-    $pconfig['remote_network'] = implode(',', $remote_networks);
+	foreach ($pconfig as $key => $value) {
+		if (preg_match('/^remote_network_\d+$/', $key)) {
+			if (!empty($value)) {
+				$remote_networks[] = $value;
+			}
+		}
+	}
+	$pconfig['remote_network'] = implode(',', $remote_networks);
+
 	if ($result = openvpn_validate_cidr($pconfig['remote_network'], 'IPv4 Remote Network', true, "ipv4", true)) {
 		$input_errors[] = $result;
 	}
+
+	// Recuperar IPv6 Remote Networks
+	$remote_networks_v6 = [];
+	foreach ($pconfig as $key => $value) {
+		if (preg_match('/^remote_networkv6_\d+$/', $key)) {
+			if (!empty($value)) {
+				$remote_networks_v6[] = $value;
+			}
+		}
+	}
+	$pconfig['remote_networkv6'] = implode(',', $remote_networks_v6);
 
 	if ($result = openvpn_validate_cidr($pconfig['remote_networkv6'], 'IPv6 Remote Network', true, "ipv6", true)) {
 		$input_errors[] = $result;
@@ -1368,56 +1381,6 @@ if ($act=="new" || $act=="edit"):
 				'Expressed as a comma-separated list of one or more IP/PREFIX or host/network type aliases. This may be left blank if not adding a ' .
 				'route to the local network through this tunnel on the remote machine. This is generally set to the LAN network.');
 
-	$counter = 0;
-	$networks = explode(',', $pconfig['remote_network']);
-
-	$numNetworks = count($networks);
-
-	while ($counter < $numNetworks) {
-		$network = $networks[$counter];
-		$group = new Form_Group($counter == 0 ? 'IPv4 Remote network(s)' : '');
-		$group->addClass('repeatable');
-
-		$group->add(new Form_Input(
-			'remote_network' . $counter,
-			'Network',
-			'text',
-			$network
-		));
-
-		$group->add(new Form_Button(
-			'deleterow' . $counter,
-			'Delete',
-			null,
-			'fa-trash'
-		))->addClass('btn-warning btn-xs');
-
-		if ($counter == ($numNetworks - 1)) {
-			$group->setHelp(gettext('IPv4 networks that will be routed through the tunnel, so that a site-to-site VPN can be established without manually ' .
-									'changing the routing tables. Expressed as one or more CIDR ranges or host/network type aliases. ' .
-									'If this is a site-to-site VPN, enter the remote LAN/s here. May be left blank for non site-to-site VPN.'));
-		}
-
-		$section->add($group);
-		$counter++;
-	}
-
-	$section->addInput(new Form_Button(
-		'addrow',
-		'Add network',
-		null,
-		'fa-plus'
-	))->addClass('btn-success addbtn');
-
-	$section->addInput(new Form_Input(
-		'remote_networkv6',
-		'IPv6 Remote network(s)',
-		'text',
-		$pconfig['remote_networkv6']
-	))->setHelp('These are the IPv6 networks that will be routed through the tunnel, so that a site-to-site VPN can be established without manually ' .
-				'changing the routing tables. Expressed as a comma-separated list of one or more IP/PREFIX or host/network type aliases. ' .
-				'If this is a site-to-site VPN, enter the remote LAN/s here. May be left blank for non site-to-site VPN.');
-
 	$section->addInput(new Form_Input(
 		'maxclients',
 		'Concurrent connections',
@@ -1488,6 +1451,77 @@ if ($act=="new" || $act=="edit"):
 	))->setHelp('Limit the number of concurrent connections from the same user.');
 
 	$form->add($section);
+
+	$ipv4_section = new Form_Section('IPv4 Remote Networks');
+	$ipv4_section->addClass('table-responsive');
+	
+	$table_ipv4 = '<table class="table table-striped table-hover table-ipv4">';
+	$table_ipv4 .= '<thead>';
+	$table_ipv4 .= '<tr>';
+	$table_ipv4 .= '<th>Network</th>';
+	$table_ipv4 .= '<th>Actions</th>';
+	$table_ipv4 .= '</tr>';
+	$table_ipv4 .= '</thead>';
+	$table_ipv4 .= '<tbody>';
+	
+	$counter = 0;
+	$networks = explode(',', $pconfig['remote_network']);
+	$numNetworks = count($networks);
+	
+	while ($counter < $numNetworks) {
+		$network = $networks[$counter];
+		$table_ipv4 .= '<tr>';
+		$table_ipv4 .= '<td><input type="text" name="remote_network_' . $counter . '" value="' . $network . '" class="form-control"/></td>';
+		$table_ipv4 .= '<td><button type="button" class="btn btn-danger btn-xs delete-ipv4">Delete</button></td>';
+		$table_ipv4 .= '</tr>';
+		$counter++;
+	}
+	
+	$table_ipv4 .= '</tbody>';
+	$table_ipv4 .= '</table>';
+	$table_ipv4 .= '<button type="button" class="btn btn-success add-ipv4">Add IPv4 Network</button>';
+	
+	$ipv4_section->addInput(new Form_StaticText(
+		'',
+		$table_ipv4
+	));
+	$form->add($ipv4_section);
+	
+	// Tabela IPv6
+	$ipv6_section = new Form_Section('IPv6 Remote Networks');
+	$ipv6_section->addClass('table-responsive');
+	
+	$table_ipv6 = '<table class="table table-striped table-hover table-ipv6">';
+	$table_ipv6 .= '<thead>';
+	$table_ipv6 .= '<tr>';
+	$table_ipv6 .= '<th>Network</th>';
+	$table_ipv6 .= '<th>Actions</th>';
+	$table_ipv6 .= '</tr>';
+	$table_ipv6 .= '</thead>';
+	$table_ipv6 .= '<tbody>';
+	
+	$counter = 0;
+	$networks_v6 = explode(',', $pconfig['remote_networkv6']);
+	$numNetworks_v6 = count($networks_v6);
+	
+	while ($counter < $numNetworks_v6) {
+		$network_v6 = $networks_v6[$counter];
+		$table_ipv6 .= '<tr>';
+		$table_ipv6 .= '<td><input type="text" name="remote_networkv6_' . $counter . '" value="' . $network_v6 . '" class="form-control"/></td>';
+		$table_ipv6 .= '<td><button type="button" class="btn btn-danger btn-xs delete-ipv6">Delete</button></td>';
+		$table_ipv6 .= '</tr>';
+		$counter++;
+	}
+	
+	$table_ipv6 .= '</tbody>';
+	$table_ipv6 .= '</table>';
+	$table_ipv6 .= '<button type="button" class="btn btn-success add-ipv6">Add IPv6 Network</button>';
+	
+	$ipv6_section->addInput(new Form_StaticText(
+		'',
+		$table_ipv6
+	));
+	$form->add($ipv6_section);
 
 	$section = new Form_Section('Client Settings');
 	$section->addClass('advanced');
@@ -2314,7 +2348,50 @@ events.push(function() {
 		hideInput('connlimit', hide);
 	}
 
+	// Função para adicionar nova linha IPv4
+	function addIPv4Row() {
+		var tableIPv4 = $('.table-ipv4 tbody');
+		var numRows = tableIPv4.children().length;
+		var newRow = '<tr>';
+		newRow += '<td><input type="text" name="remote_network_' + numRows + '" class="form-control"/></td>';
+		newRow += '<td><button type="button" class="btn btn-danger btn-xs delete-ipv4">Delete</button></td>';
+		newRow += '</tr>';
+		tableIPv4.append(newRow);
+	}
+
+	// Função para adicionar nova linha IPv6
+	function addIPv6Row() {
+		var tableIPv6 = $('.table-ipv6 tbody');
+		var numRows = tableIPv6.children().length;
+		var newRow = '<tr>';
+		newRow += '<td><input type="text" name="remote_networkv6_' + numRows + '" class="form-control"/></td>';
+		newRow += '<td><button type="button" class="btn btn-danger btn-xs delete-ipv6">Delete</button></td>';
+		newRow += '</tr>';
+		tableIPv6.append(newRow);
+	}
+
+
 	// ---------- Monitor elements for change and call the appropriate display functions ------------------------------
+
+	$('.add-ipv4').click(function(e) {
+        e.preventDefault();
+        addIPv4Row();
+    });
+
+    $('.add-ipv6').click(function(e) {
+        e.preventDefault();
+        addIPv6Row();
+    });
+
+    $('form').on('click', '.delete-ipv4', function(e) {
+        e.preventDefault();
+        $(this).closest('tr').remove();
+    });
+
+    $('form').on('click', '.delete-ipv6', function(e) {
+        e.preventDefault();
+        $(this).closest('tr').remove();
+    });
 
 	// NTP
 	$('#ntp_server_enable').click(function () {
@@ -2480,4 +2557,3 @@ events.push(function() {
 <?php
 
 include("foot.inc");
-
