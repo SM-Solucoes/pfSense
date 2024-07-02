@@ -458,7 +458,7 @@ if ($_POST['save']) {
 		$input_errors[] = gettext("The submitted IPv6 Tunnel Network is already in use.");
 	}
 
-	// Recuperar IPv4 Remote Networks
+	// Load IPv4 Remote Networks
 	$remote_networks = [];
 	foreach ($pconfig as $key => $value) {
 		if (preg_match('/^remote_network_\d+$/', $key)) {
@@ -473,7 +473,7 @@ if ($_POST['save']) {
 		$input_errors[] = $result;
 	}
 
-	// Recuperar IPv6 Remote Networks
+	// Load IPv6 Remote Networks
 	$remote_networks_v6 = [];
 	foreach ($pconfig as $key => $value) {
 		if (preg_match('/^remote_networkv6_\d+$/', $key)) {
@@ -2348,7 +2348,7 @@ events.push(function() {
 		hideInput('connlimit', hide);
 	}
 
-	// Função para adicionar nova linha IPv4
+	// Add new row IPv4
 	function addIPv4Row() {
 		var tableIPv4 = $('.table-ipv4 tbody');
 		var numRows = tableIPv4.children().length;
@@ -2359,7 +2359,7 @@ events.push(function() {
 		tableIPv4.append(newRow);
 	}
 
-	// Função para adicionar nova linha IPv6
+	// Add new row IPv6
 	function addIPv6Row() {
 		var tableIPv6 = $('.table-ipv6 tbody');
 		var numRows = tableIPv6.children().length;
@@ -2373,25 +2373,29 @@ events.push(function() {
 
 	// ---------- Monitor elements for change and call the appropriate display functions ------------------------------
 
+	// Remote network IPv4 add
 	$('.add-ipv4').click(function(e) {
-        e.preventDefault();
-        addIPv4Row();
-    });
+		e.preventDefault();
+		addIPv4Row();
+	});
 
-    $('.add-ipv6').click(function(e) {
-        e.preventDefault();
-        addIPv6Row();
-    });
+	// Remote network IPv6 add
+	$('.add-ipv6').click(function(e) {
+		e.preventDefault();
+		addIPv6Row();
+	});
 
-    $('form').on('click', '.delete-ipv4', function(e) {
-        e.preventDefault();
-        $(this).closest('tr').remove();
-    });
+	// Remote network IPv4 delete
+	$('form').on('click', '.delete-ipv4', function(e) {
+		e.preventDefault();
+		$(this).closest('tr').remove();
+	});
 
-    $('form').on('click', '.delete-ipv6', function(e) {
-        e.preventDefault();
-        $(this).closest('tr').remove();
-    });
+	// Remote network IPv6 delete
+	$('form').on('click', '.delete-ipv6', function(e) {
+		e.preventDefault();
+		$(this).closest('tr').remove();
+	});
 
 	// NTP
 	$('#ntp_server_enable').click(function () {
