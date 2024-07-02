@@ -1453,7 +1453,7 @@ if ($act=="new" || $act=="edit"):
 	$form->add($section);
 
 	$ipv4_section = new Form_Section('IPv4 Remote Networks');
-	$ipv4_section->addClass('table-responsive');
+	$ipv4_section->addClass('table-container');
 	
 	$table_ipv4 = '<table class="table table-striped table-hover table-ipv4">';
 	$table_ipv4 .= '<thead>';
@@ -1489,7 +1489,7 @@ if ($act=="new" || $act=="edit"):
 	
 	// Tabela IPv6
 	$ipv6_section = new Form_Section('IPv6 Remote Networks');
-	$ipv6_section->addClass('table-responsive');
+	$ipv6_section->addClass('table-container');
 	
 	$table_ipv6 = '<table class="table table-striped table-hover table-ipv6">';
 	$table_ipv6 .= '<thead>';
